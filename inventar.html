@@ -1,0 +1,445 @@
+<!DOCTYPE html>
+<html lang="ro">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PIARMAP - Inventar Forme Fibre 3D</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&family=JetBrains+Mono:wght@400;500&display=swap');
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--bg:#f8f9fa;--surface:#ffffff;--surface2:#f1f3f5;--border:#dee2e6;--text:#212529;--text2:#6c757d;--accent:#4f9cf7;--accent2:#7c3aed}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;overflow-x:hidden}
+.app{display:grid;grid-template-columns:320px 1fr;height:100vh}
+@media(max-width:768px){.app{grid-template-columns:1fr;grid-template-rows:auto 1fr}}
+.sidebar{background:var(--surface);border-right:1px solid var(--border);overflow-y:auto;padding:0}
+.sidebar-header{padding:20px;border-bottom:1px solid var(--border);background:linear-gradient(135deg,#e8edf5,#f0e8f5)}
+.sidebar-header h1{font-size:18px;font-weight:700;letter-spacing:1px}
+.sidebar-header p{font-size:11px;color:var(--text2);margin-top:4px;letter-spacing:0.5px}
+.fiber-list{padding:8px}
+.fiber-btn{width:100%;text-align:left;padding:10px 14px;border:1px solid transparent;border-radius:8px;background:none;color:var(--text);cursor:pointer;transition:all .15s;display:flex;align-items:center;gap:10px;margin-bottom:2px}
+.fiber-btn:hover{background:var(--surface2);border-color:var(--border)}
+.fiber-btn.active{background:var(--surface2);border-color:var(--accent)}
+.fiber-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
+.fiber-btn .fname{font-size:13px;font-weight:500}
+.fiber-btn .fdesc{font-size:10px;color:var(--text2);display:block}
+.params-section{padding:16px 20px;border-top:1px solid var(--border)}
+.params-section h3{font-size:11px;text-transform:uppercase;letter-spacing:1.5px;color:var(--text2);margin-bottom:12px}
+.param-row{margin-bottom:10px}
+.param-row label{display:flex;justify-content:space-between;font-size:12px;color:var(--text2);margin-bottom:4px}
+.param-row label span{font-family:'JetBrains Mono',monospace;color:var(--accent)}
+.param-row input[type=range]{width:100%;height:4px;-webkit-appearance:none;background:var(--border);border-radius:2px;outline:none}
+.param-row input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:14px;height:14px;border-radius:50%;background:var(--accent);cursor:pointer;border:2px solid var(--bg)}
+.props-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.prop-card{background:var(--surface2);border-radius:8px;padding:10px 12px;border:1px solid var(--border)}
+.prop-card .plabel{font-size:10px;color:var(--text2);text-transform:uppercase;letter-spacing:0.5px}
+.prop-card .pvalue{font-size:16px;font-weight:700;font-family:'JetBrains Mono',monospace;margin-top:2px}
+.main-view{position:relative;display:flex;flex-direction:column}
+.canvas-wrap{flex:1;position:relative;cursor:grab}
+.canvas-wrap:active{cursor:grabbing}
+.canvas-wrap canvas{width:100%!important;height:100%!important;display:block}
+.hud-top{position:absolute;top:16px;left:20px;pointer-events:none}
+.hud-top h2{font-size:22px;font-weight:700}
+.hud-top p{font-size:12px;color:var(--text2);margin-top:2px}
+.hud-bottom{position:absolute;bottom:16px;left:20px;right:20px;display:flex;justify-content:space-between;align-items:flex-end;pointer-events:none}
+.hud-bottom .controls{pointer-events:all;display:flex;gap:8px;align-items:center}
+.hud-bottom .info{text-align:right;font-size:10px;color:var(--text2);line-height:1.6}
+.btn-sm{background:var(--surface2);border:1px solid var(--border);color:var(--text);padding:6px 14px;border-radius:6px;font-size:12px;cursor:pointer;font-family:'DM Sans',sans-serif;transition:all .15s}
+.btn-sm:hover{background:var(--border);border-color:var(--accent)}
+.zoom-slider{width:120px;height:4px;-webkit-appearance:none;background:var(--border);border-radius:2px;outline:none;vertical-align:middle}
+.zoom-slider::-webkit-slider-thumb{-webkit-appearance:none;width:14px;height:14px;border-radius:50%;background:var(--accent);cursor:pointer;border:2px solid var(--bg)}
+.perf-bars{padding:16px 20px;border-top:1px solid var(--border)}
+.perf-row{display:flex;align-items:center;gap:8px;margin-bottom:6px}
+.perf-row .pname{width:80px;font-size:10px;color:var(--text2);text-align:right}
+.perf-row .pbar{flex:1;height:6px;background:var(--border);border-radius:3px;overflow:hidden}
+.perf-row .pfill{height:100%;border-radius:3px;transition:width .5s}
+.perf-row .pval{width:45px;font-size:10px;font-family:'JetBrains Mono',monospace;color:var(--text2)}
+.footer-bar{padding:10px 20px;border-top:1px solid var(--border);text-align:center;font-size:10px;color:var(--text2);letter-spacing:0.5px;background:var(--surface)}
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="sidebar" id="sidebar">
+    <div class="sidebar-header">
+      <h1>PIARMAP</h1>
+      <p>Inventar forme fibre 3D &middot; Grant ARUST 29</p>
+    </div>
+    <div class="fiber-list" id="fiberList"></div>
+    <div class="params-section" id="paramsSection">
+      <h3>Dimensiuni</h3>
+      <div id="paramSliders"></div>
+    </div>
+    <div class="params-section">
+      <h3>Proprietati</h3>
+      <div class="props-grid" id="propsGrid"></div>
+    </div>
+    <div class="perf-bars" id="perfBars">
+      <h3 style="font-size:11px;text-transform:uppercase;letter-spacing:1.5px;color:var(--text2);margin-bottom:12px">Performanta vs. referinta</h3>
+      <div id="perfRows"></div>
+    </div>
+    <div class="footer-bar">UTCB &middot; ARUST 29 &middot; 2025-2026</div>
+  </div>
+  <div class="main-view">
+    <div class="canvas-wrap" id="canvasWrap">
+      <canvas id="c3d"></canvas>
+      <div class="hud-top"><h2 id="hudName"></h2><p id="hudDesc"></p></div>
+      <div class="hud-bottom">
+        <div class="controls">
+          <button class="btn-sm" id="btnReset">Reset</button>
+          <button class="btn-sm" id="btnWire">Wireframe</button>
+          <span style="font-size:11px;color:var(--text2)">Zoom</span>
+          <input type="range" class="zoom-slider" id="zoomSlider" min="0.3" max="4" step="0.1" value="1.2">
+        </div>
+        <div class="info">Rotire: trage cu mouse-ul<br>Zoom: scroll sau slider</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+var FIBERS = {
+  cylindrical: { name:"Cilindrica (referinta)", desc:"Fibra dreapta cu sectiune circulara", color:"#808080",
+    params:[{k:"length",l:"Lungime (mm)",d:20,min:5,max:60},{k:"diameter",l:"Diametru (mm)",d:0.6,min:0.1,max:2,s:0.1}],
+    imp:{comp:0,flex:0,pull:0,energy:0}, refs:"Referinta" },
+  crimped: { name:"Ondulata (crimped)", desc:"Profil sinusoidal - imbinare mecanica", color:"#FF7F00",
+    params:[{k:"length",l:"Lungime (mm)",d:25,min:10,max:60},{k:"diameter",l:"Diametru (mm)",d:0.75,min:0.2,max:2,s:0.1},{k:"amplitude",l:"Amplitudine (mm)",d:1.5,min:0.5,max:4,s:0.1},{k:"waves",l:"Nr. ondulatii",d:4,min:2,max:10,s:1}],
+    imp:{comp:44.8,flex:29,pull:15,energy:120}, refs:"Gribniak 2023" },
+  hooked3d: { name:"Cu carlig 3D (hooked-end)", desc:"O indoitura la fiecare capat", color:"#2166AC",
+    params:[{k:"length",l:"Lungime (mm)",d:30,min:15,max:60},{k:"diameter",l:"Diametru (mm)",d:0.55,min:0.2,max:1.5,s:0.05},{k:"hookLen",l:"Lungime carlig (mm)",d:3,min:1,max:8,s:0.5},{k:"hookAngle",l:"Unghi carlig (deg)",d:146,min:100,max:170,s:1}],
+    imp:{comp:13,flex:25,pull:20,energy:150}, refs:"Lee 2024" },
+  hooked5d: { name:"Cu carlig 5D", desc:"Trei indoituri la fiecare capat", color:"#1a4a8a",
+    params:[{k:"length",l:"Lungime (mm)",d:30,min:15,max:60},{k:"diameter",l:"Diametru (mm)",d:0.55,min:0.2,max:1.5,s:0.05},{k:"hookLen",l:"Lungime carlig (mm)",d:2,min:1,max:5,s:0.5}],
+    imp:{comp:15,flex:42,pull:35,energy:180}, refs:"Naaman 2003" },
+  spiral: { name:"Spiralata 3D simpla", desc:"Geometrie optima Altair Inspire", color:"#E41A1C",
+    params:[{k:"length",l:"Lungime (mm)",d:20,min:10,max:40},{k:"diameter",l:"Diametru fir (mm)",d:0.5,min:0.2,max:1.5,s:0.1},{k:"helixD",l:"Diametru spirala (mm)",d:3,min:1,max:8,s:0.5},{k:"pitch",l:"Pas spirala (mm)",d:4,min:1,max:10,s:0.5}],
+    imp:{comp:12,flex:30,pull:40,energy:200}, refs:"PIARMAP Altair" },
+  spiral_bulb: { name:"Spiralata cu bulb", desc:"Spirala cu bulbi de ancorare la capete", color:"#C41E3A",
+    params:[{k:"length",l:"Lungime (mm)",d:20,min:10,max:40},{k:"diameter",l:"Diametru fir (mm)",d:0.5,min:0.2,max:1.5,s:0.1},{k:"helixD",l:"Diametru spirala (mm)",d:3,min:1,max:8,s:0.5},{k:"pitch",l:"Pas spirala (mm)",d:4,min:1,max:10,s:0.5},{k:"bulbD",l:"Diametru bulb (mm)",d:2,min:0.5,max:4,s:0.5}],
+    imp:{comp:15,flex:35,pull:45,energy:220}, refs:"PIARMAP" },
+  band: { name:"Banda rugoasa", desc:"Sectiune dreptunghiulara cu rugozitate", color:"#4DAF4A",
+    params:[{k:"length",l:"Lungime (mm)",d:20,min:10,max:50},{k:"width",l:"Latime (mm)",d:2,min:0.5,max:5,s:0.1},{k:"thickness",l:"Grosime (mm)",d:0.5,min:0.1,max:2,s:0.1}],
+    imp:{comp:8,flex:18,pull:25,energy:80}, refs:"PIARMAP" },
+  zigzag: { name:"Zig-zag", desc:"Profil angular - ancorare prin unghi", color:"#FF6600",
+    params:[{k:"length",l:"Lungime (mm)",d:25,min:10,max:50},{k:"diameter",l:"Diametru (mm)",d:0.6,min:0.2,max:1.5,s:0.1},{k:"amplitude",l:"Amplitudine (mm)",d:2,min:0.5,max:5,s:0.5},{k:"segments",l:"Nr. segmente",d:6,min:3,max:12,s:1}],
+    imp:{comp:10,flex:22,pull:18,energy:100}, refs:"PIARMAP" },
+  anchor: { name:"Cu ancora (T-shape)", desc:"Capete in forma de T", color:"#8B4513",
+    params:[{k:"length",l:"Lungime (mm)",d:20,min:10,max:40},{k:"diameter",l:"Diametru (mm)",d:0.6,min:0.2,max:1.5,s:0.1},{k:"anchorW",l:"Latime ancora (mm)",d:3,min:1,max:6,s:0.5}],
+    imp:{comp:10,flex:20,pull:22,energy:130}, refs:"PIARMAP" },
+  sika12: { name:"SikaFiber-12 (micro)", desc:"Monofilament PP 12 mm", color:"#9467BD",
+    params:[{k:"length",l:"Lungime (mm)",d:12,min:6,max:19},{k:"diameter",l:"Diametru (mm)",d:0.032,min:0.018,max:0.05,s:0.001}],
+    imp:{comp:2,flex:5,pull:3,energy:30}, refs:"Sika 0.6-1.0 kg/m3" },
+  sikaForce48: { name:"SikaFiber Force-48", desc:"Macro poliolefin 48 mm structural", color:"#D62728",
+    params:[{k:"length",l:"Lungime (mm)",d:48,min:38,max:54},{k:"diameter",l:"Diametru (mm)",d:0.7,min:0.5,max:1.0,s:0.05}],
+    imp:{comp:5,flex:25,pull:18,energy:150}, refs:"Sika 3-10 kg/m3" }
+};
+
+var state = { selected: 'spiral', params: {}, rotX: -20, rotY: 30, zoom: 1.2, dragging: false, lastX: 0, lastY: 0, wireframe: false };
+var canvas, ctx, W, H, animId;
+
+function init() {
+  canvas = document.getElementById('c3d');
+  ctx = canvas.getContext('2d');
+  buildList();
+  selectFiber('spiral');
+  setupEvents();
+  resize();
+  window.addEventListener('resize', resize);
+  draw();
+}
+
+function resize() {
+  var wrap = document.getElementById('canvasWrap');
+  W = canvas.width = wrap.clientWidth;
+  H = canvas.height = wrap.clientHeight;
+  draw();
+}
+
+function buildList() {
+  var html = '';
+  for (var k in FIBERS) {
+    var f = FIBERS[k];
+    html += '<button class="fiber-btn" data-key="'+k+'" onclick="selectFiber(\''+k+'\')">';
+    html += '<div class="fiber-dot" style="background:'+f.color+'"></div>';
+    html += '<div><span class="fname">'+f.name+'</span><span class="fdesc">'+f.desc+'</span></div></button>';
+  }
+  document.getElementById('fiberList').innerHTML = html;
+}
+
+function selectFiber(key) {
+  state.selected = key;
+  var f = FIBERS[key];
+  state.params = {};
+  f.params.forEach(function(p) { state.params[p.k] = p.d; });
+  document.querySelectorAll('.fiber-btn').forEach(function(b) {
+    b.classList.toggle('active', b.dataset.key === key);
+  });
+  document.getElementById('hudName').textContent = f.name;
+  document.getElementById('hudDesc').textContent = f.desc;
+  buildSliders();
+  updateProps();
+  updatePerf();
+  draw();
+}
+
+function buildSliders() {
+  var f = FIBERS[state.selected];
+  var html = '';
+  f.params.forEach(function(p) {
+    html += '<div class="param-row"><label>'+p.l+' <span id="pv_'+p.k+'">'+state.params[p.k]+'</span></label>';
+    html += '<input type="range" min="'+p.min+'" max="'+p.max+'" step="'+(p.s||1)+'" value="'+state.params[p.k]+'" data-key="'+p.k+'" oninput="updateParam(this)"></div>';
+  });
+  document.getElementById('paramSliders').innerHTML = html;
+}
+
+function updateParam(el) {
+  var k = el.dataset.key;
+  state.params[k] = parseFloat(el.value);
+  document.getElementById('pv_'+k).textContent = el.value;
+  updateProps();
+  draw();
+}
+
+function updateProps() {
+  var p = state.params;
+  var vol, area;
+  if (state.selected === 'band') {
+    vol = (p.length||20) * (p.width||2) * (p.thickness||0.5);
+    area = 2*((p.length||20)*(p.width||2) + (p.length||20)*(p.thickness||0.5) + (p.width||2)*(p.thickness||0.5));
+  } else {
+    var d = p.diameter || 0.5;
+    var L = p.length || 20;
+    vol = Math.PI * (d/2)*(d/2) * L;
+    area = Math.PI * d * L;
+  }
+  var mass = vol * 0.00091;
+  var html = '<div class="prop-card"><div class="plabel">Volum</div><div class="pvalue">'+vol.toFixed(2)+'<span style="font-size:10px;color:var(--text2)"> mm3</span></div></div>';
+  html += '<div class="prop-card"><div class="plabel">Suprafata</div><div class="pvalue">'+area.toFixed(1)+'<span style="font-size:10px;color:var(--text2)"> mm2</span></div></div>';
+  html += '<div class="prop-card"><div class="plabel">Masa</div><div class="pvalue">'+mass.toFixed(2)+'<span style="font-size:10px;color:var(--text2)"> mg</span></div></div>';
+  html += '<div class="prop-card"><div class="plabel">Referinta</div><div class="pvalue" style="font-size:11px">'+FIBERS[state.selected].refs+'</div></div>';
+  document.getElementById('propsGrid').innerHTML = html;
+}
+
+function updatePerf() {
+  var imp = FIBERS[state.selected].imp;
+  var maxV = 250;
+  var rows = [
+    {name:'Compresiune', val:imp.comp, color:'#4f9cf7'},
+    {name:'Incovoiere', val:imp.flex, color:'#4DAF4A'},
+    {name:'Smulgere', val:imp.pull, color:'#FF7F00'},
+    {name:'Energie', val:imp.energy, color:'#E41A1C'}
+  ];
+  var html = '';
+  rows.forEach(function(r) {
+    html += '<div class="perf-row"><div class="pname">'+r.name+'</div><div class="pbar"><div class="pfill" style="width:'+(r.val/maxV*100)+'%;background:'+r.color+'"></div></div><div class="pval">+'+r.val+'%</div></div>';
+  });
+  document.getElementById('perfRows').innerHTML = html;
+}
+
+function generateGeometry(type, p) {
+  var pts = [];
+  var L = p.length || 20;
+  var N = 300;
+  var d = p.diameter || p.width || 0.5;
+
+  switch(type) {
+    case 'cylindrical': case 'sika12': case 'sikaForce48':
+      for (var i = 0; i <= N; i++) { var t = i/N; pts.push({x: t*L - L/2, y: 0, z: 0}); }
+      break;
+    case 'crimped':
+      var amp = p.amplitude || 1.5;
+      var waves = p.waves || 4;
+      for (var i = 0; i <= N; i++) { var t = i/N; pts.push({x: t*L - L/2, y: amp * Math.sin(t * waves * 2 * Math.PI), z: 0}); }
+      break;
+    case 'hooked3d':
+      var hl = p.hookLen || 3;
+      var ha = (p.hookAngle || 146) * Math.PI / 180;
+      pts.push({x: -L/2 - hl*Math.cos(Math.PI-ha), y: hl*Math.sin(Math.PI-ha), z: 0});
+      pts.push({x: -L/2, y: 0, z: 0});
+      for (var i = 0; i <= N; i++) { var t = i/N; pts.push({x: t*L - L/2, y: 0, z: 0}); }
+      pts.push({x: L/2, y: 0, z: 0});
+      pts.push({x: L/2 + hl*Math.cos(Math.PI-ha), y: -hl*Math.sin(Math.PI-ha), z: 0});
+      break;
+    case 'hooked5d':
+      var hl = p.hookLen || 2;
+      // Left 3 hooks
+      pts.push({x:-L/2-hl*2.5, y:hl*0.8, z:0}); pts.push({x:-L/2-hl*2, y:-hl*0.5, z:0});
+      pts.push({x:-L/2-hl*1.2, y:hl*0.5, z:0}); pts.push({x:-L/2-hl*0.5, y:-hl*0.3, z:0});
+      pts.push({x:-L/2, y:0, z:0});
+      for (var i = 0; i <= N; i++) { var t = i/N; pts.push({x: t*L - L/2, y: 0, z: 0}); }
+      pts.push({x:L/2, y:0, z:0});
+      pts.push({x:L/2+hl*0.5, y:hl*0.3, z:0}); pts.push({x:L/2+hl*1.2, y:-hl*0.5, z:0});
+      pts.push({x:L/2+hl*2, y:hl*0.5, z:0}); pts.push({x:L/2+hl*2.5, y:-hl*0.8, z:0});
+      break;
+    case 'spiral': case 'spiral_bulb':
+      var hd = (p.helixD || 3) / 2;
+      var pitch = p.pitch || 4;
+      var turns = L / pitch;
+      for (var i = 0; i <= N; i++) { var t = i/N; var a = t * turns * 2 * Math.PI; pts.push({x: t*L - L/2, y: hd*Math.cos(a), z: hd*Math.sin(a)}); }
+      break;
+    case 'band':
+      var w = (p.width || 2) / 2;
+      var th = (p.thickness || 0.5) / 2;
+      var rug = 0.15;
+      // Top face with rugosity
+      for (var i = 0; i <= 60; i++) { var t = i/60; var rx = (Math.random()-0.5)*rug; var ry = (Math.random()-0.5)*rug; pts.push({x: t*L - L/2+rx, y: -w+ry, z: th}); }
+      pts.push(null);
+      for (var i = 0; i <= 60; i++) { var t = i/60; var rx = (Math.random()-0.5)*rug; var ry = (Math.random()-0.5)*rug; pts.push({x: t*L - L/2+rx, y: w+ry, z: th}); }
+      pts.push(null);
+      for (var i = 0; i <= 60; i++) { var t = i/60; pts.push({x: t*L - L/2, y: -w, z: -th}); }
+      pts.push(null);
+      for (var i = 0; i <= 60; i++) { var t = i/60; pts.push({x: t*L - L/2, y: w, z: -th}); }
+      pts.push(null);
+      // Connect ends
+      pts.push({x:-L/2,y:-w,z:-th}); pts.push({x:-L/2,y:-w,z:th}); pts.push(null);
+      pts.push({x:-L/2,y:w,z:-th}); pts.push({x:-L/2,y:w,z:th}); pts.push(null);
+      pts.push({x:L/2,y:-w,z:-th}); pts.push({x:L/2,y:-w,z:th}); pts.push(null);
+      pts.push({x:L/2,y:w,z:-th}); pts.push({x:L/2,y:w,z:th}); pts.push(null);
+      pts.push({x:-L/2,y:-w,z:-th}); pts.push({x:-L/2,y:w,z:-th}); pts.push(null);
+      pts.push({x:-L/2,y:-w,z:th}); pts.push({x:-L/2,y:w,z:th}); pts.push(null);
+      pts.push({x:L/2,y:-w,z:-th}); pts.push({x:L/2,y:w,z:-th}); pts.push(null);
+      pts.push({x:L/2,y:-w,z:th}); pts.push({x:L/2,y:w,z:th});
+      break;
+    case 'zigzag':
+      var amp = p.amplitude || 2;
+      var segs = p.segments || 6;
+      for (var i = 0; i <= segs; i++) { var t = i/segs; pts.push({x: t*L - L/2, y: (i%2===0?-1:1)*amp, z: 0}); }
+      break;
+    case 'anchor':
+      var aw = (p.anchorW || 3) / 2;
+      // Left T
+      pts.push({x:-L/2,y:-aw,z:0}); pts.push({x:-L/2,y:aw,z:0}); pts.push(null);
+      pts.push({x:-L/2,y:0,z:-aw}); pts.push({x:-L/2,y:0,z:aw}); pts.push(null);
+      // Body
+      pts.push({x:-L/2,y:0,z:0});
+      for (var i = 0; i <= N; i++) { var t = i/N; pts.push({x: t*L-L/2, y: 0, z: 0}); }
+      pts.push(null);
+      // Right T
+      pts.push({x:L/2,y:-aw,z:0}); pts.push({x:L/2,y:aw,z:0}); pts.push(null);
+      pts.push({x:L/2,y:0,z:-aw}); pts.push({x:L/2,y:0,z:aw});
+      break;
+  }
+  return pts;
+}
+
+function project(x, y, z) {
+  var cx = Math.cos(state.rotX*Math.PI/180), sx = Math.sin(state.rotX*Math.PI/180);
+  var cy = Math.cos(state.rotY*Math.PI/180), sy = Math.sin(state.rotY*Math.PI/180);
+  var x1 = x*cy - z*sy;
+  var z1 = x*sy + z*cy;
+  var y1 = y*cx - z1*sx;
+  var z2 = y*sx + z1*cx;
+  var s = state.zoom * Math.min(W,H) / ((state.params.length||20)*2.2);
+  return { x: W/2 + x1*s, y: H/2 + y1*s, z: z2 };
+}
+
+function draw() {
+  if (!ctx) return;
+  ctx.clearRect(0, 0, W, H);
+  var f = FIBERS[state.selected];
+  var L = state.params.length || 20;
+  var gSize = L * 0.7;
+  var gStep = gSize / 4;
+
+  // Grid
+  ctx.globalAlpha = 0.3;
+  ctx.strokeStyle = '#adb5bd';
+  ctx.lineWidth = 0.5;
+  for (var g = -gSize; g <= gSize; g += gStep) {
+    var p1 = project(g, 0, -gSize), p2 = project(g, 0, gSize);
+    ctx.beginPath(); ctx.moveTo(p1.x, p1.y); ctx.lineTo(p2.x, p2.y); ctx.stroke();
+    p1 = project(-gSize, 0, g); p2 = project(gSize, 0, g);
+    ctx.beginPath(); ctx.moveTo(p1.x, p1.y); ctx.lineTo(p2.x, p2.y); ctx.stroke();
+  }
+  ctx.globalAlpha = 1;
+
+  // Axes
+  var axLen = gSize * 0.85;
+  var o = project(0,0,0);
+  ctx.lineWidth = 1.5;
+  var axes = [{x:axLen,y:0,z:0,c:'#e74c3c',l:'X'},{x:0,y:axLen,z:0,c:'#2ecc71',l:'Y'},{x:0,y:0,z:axLen,c:'#3498db',l:'Z'}];
+  axes.forEach(function(a) {
+    var p = project(a.x, a.y, a.z);
+    ctx.strokeStyle = a.c; ctx.beginPath(); ctx.moveTo(o.x, o.y); ctx.lineTo(p.x, p.y); ctx.stroke();
+    ctx.fillStyle = a.c; ctx.font = '12px DM Sans'; ctx.fillText(a.l, p.x+6, p.y+4);
+  });
+
+  // Fiber
+  var pts = generateGeometry(state.selected, state.params);
+  var thick = state.wireframe ? 1.5 : Math.max(2, Math.min(5, state.zoom * 3));
+  ctx.strokeStyle = f.color;
+  ctx.lineWidth = thick;
+  ctx.lineCap = 'round';
+  ctx.lineJoin = 'round';
+  ctx.shadowColor = f.color;
+  ctx.shadowBlur = state.wireframe ? 0 : 8;
+
+  ctx.beginPath();
+  var started = false;
+  for (var i = 0; i < pts.length; i++) {
+    if (pts[i] === null) { ctx.stroke(); ctx.beginPath(); started = false; continue; }
+    var pp = project(pts[i].x, pts[i].y, pts[i].z);
+    if (!started) { ctx.moveTo(pp.x, pp.y); started = true; } else { ctx.lineTo(pp.x, pp.y); }
+  }
+  ctx.stroke();
+  ctx.shadowBlur = 0;
+
+  // Bulbs for spiral_bulb
+  if (state.selected === 'spiral_bulb') {
+    var bs = (state.params.bulbD || 2) * state.zoom * Math.min(W,H) / ((L)*2.2) * 0.5;
+    var startP = project(-L/2, 0, 0);
+    var endP = project(L/2, 0, 0);
+    ctx.fillStyle = f.color + '66';
+    ctx.strokeStyle = f.color;
+    ctx.lineWidth = 1.5;
+    ctx.beginPath(); ctx.arc(startP.x, startP.y, bs, 0, Math.PI*2); ctx.fill(); ctx.stroke();
+    ctx.beginPath(); ctx.arc(endP.x, endP.y, bs, 0, Math.PI*2); ctx.fill(); ctx.stroke();
+  }
+
+  // Scale bar
+  var sLen = 10; // 10 mm
+  var s1 = project(-L/2, -gSize*0.9, 0);
+  var s2 = project(-L/2 + sLen, -gSize*0.9, 0);
+  ctx.strokeStyle = '#556677';
+  ctx.lineWidth = 2;
+  ctx.beginPath(); ctx.moveTo(s1.x, s1.y); ctx.lineTo(s2.x, s2.y); ctx.stroke();
+  ctx.fillStyle = '#6c757d';
+  ctx.font = '10px JetBrains Mono';
+  ctx.fillText('10 mm', (s1.x+s2.x)/2 - 15, s1.y + 14);
+}
+
+function setupEvents() {
+  var wrap = document.getElementById('canvasWrap');
+  wrap.addEventListener('mousedown', function(e) { state.dragging = true; state.lastX = e.clientX; state.lastY = e.clientY; });
+  window.addEventListener('mousemove', function(e) {
+    if (!state.dragging) return;
+    state.rotY += (e.clientX - state.lastX) * 0.4;
+    state.rotX = Math.max(-89, Math.min(89, state.rotX + (e.clientY - state.lastY) * 0.4));
+    state.lastX = e.clientX; state.lastY = e.clientY;
+    draw();
+  });
+  window.addEventListener('mouseup', function() { state.dragging = false; });
+  wrap.addEventListener('wheel', function(e) {
+    e.preventDefault();
+    state.zoom = Math.max(0.3, Math.min(4, state.zoom - e.deltaY * 0.001));
+    document.getElementById('zoomSlider').value = state.zoom;
+    draw();
+  }, {passive: false});
+  // Touch
+  wrap.addEventListener('touchstart', function(e) { if(e.touches.length===1){state.dragging=true;state.lastX=e.touches[0].clientX;state.lastY=e.touches[0].clientY;} }, {passive:true});
+  wrap.addEventListener('touchmove', function(e) {
+    if(!state.dragging||e.touches.length!==1) return;
+    state.rotY += (e.touches[0].clientX-state.lastX)*0.4;
+    state.rotX = Math.max(-89,Math.min(89,state.rotX+(e.touches[0].clientY-state.lastY)*0.4));
+    state.lastX=e.touches[0].clientX; state.lastY=e.touches[0].clientY;
+    draw();
+  }, {passive:true});
+  wrap.addEventListener('touchend', function(){state.dragging=false;});
+
+  document.getElementById('zoomSlider').addEventListener('input', function(e) { state.zoom = parseFloat(e.value); draw(); });
+  document.getElementById('btnReset').addEventListener('click', function() { state.rotX=-20; state.rotY=30; state.zoom=1.2; document.getElementById('zoomSlider').value=1.2; draw(); });
+  document.getElementById('btnWire').addEventListener('click', function() { state.wireframe=!state.wireframe; this.style.borderColor=state.wireframe?'var(--accent)':'var(--border)'; draw(); });
+}
+
+window.addEventListener('DOMContentLoaded', init);
+</script>
+</body>
+</html>
