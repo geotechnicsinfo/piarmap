@@ -1,0 +1,667 @@
+<!DOCTYPE html>
+<html lang="ro">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Calculator Rețetă Beton PFRC — PIARMAP</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Source+Serif+4:wght@400;600;700&family=JetBrains+Mono:wght@400;500&family=DM+Sans:wght@400;500;600;700&display=swap');
+
+:root {
+  --bg: #FAFAF8;
+  --card: #FFFFFF;
+  --border: #E2E0DC;
+  --text: #1A1A18;
+  --text-dim: #6B6962;
+  --accent: #2D5F2D;
+  --accent-light: #E8F0E8;
+  --blue: #1B4B6B;
+  --blue-light: #E6EFF5;
+  --orange: #8B5E2B;
+  --orange-light: #FFF4E6;
+  --red: #8B2B2B;
+  --red-light: #FDECEC;
+  --fiber-band: #3A7CA5;
+  --fiber-spiral: #D4572A;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  font-family: 'DM Sans', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  line-height: 1.6;
+}
+
+.container {
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 32px 20px;
+}
+
+header {
+  text-align: center;
+  margin-bottom: 40px;
+  padding-bottom: 32px;
+  border-bottom: 2px solid var(--border);
+}
+
+header h1 {
+  font-family: 'Source Serif 4', serif;
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--text);
+  margin-bottom: 6px;
+}
+
+header p {
+  font-size: 14px;
+  color: var(--text-dim);
+  font-family: 'JetBrains Mono', monospace;
+}
+
+.input-section {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 28px;
+  margin-bottom: 28px;
+}
+
+.input-section h2 {
+  font-family: 'Source Serif 4', serif;
+  font-size: 18px;
+  font-weight: 600;
+  margin-bottom: 20px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--border);
+}
+
+.input-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+@media (max-width: 640px) {
+  .input-grid { grid-template-columns: 1fr; }
+}
+
+.input-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.input-group label {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.input-group input,
+.input-group select {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 16px;
+  padding: 10px 14px;
+  border: 1.5px solid var(--border);
+  border-radius: 8px;
+  background: var(--bg);
+  color: var(--text);
+  transition: border-color 0.2s;
+}
+
+.input-group input:focus,
+.input-group select:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-light);
+}
+
+.input-group .unit {
+  font-size: 12px;
+  color: var(--text-dim);
+  font-style: italic;
+}
+
+.fiber-toggle {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 16px;
+  padding: 14px;
+  background: var(--accent-light);
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.fiber-toggle input[type="checkbox"] {
+  width: 20px;
+  height: 20px;
+  accent-color: var(--accent);
+}
+
+.fiber-toggle span {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--accent);
+}
+
+.fiber-options {
+  display: none;
+  margin-top: 16px;
+  padding: 16px;
+  background: var(--blue-light);
+  border-radius: 8px;
+  border: 1px solid #C5D9E8;
+}
+
+.fiber-options.visible {
+  display: block;
+}
+
+.fiber-options h3 {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--blue);
+  margin-bottom: 12px;
+}
+
+/* Results */
+.results {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+  margin-bottom: 28px;
+}
+
+@media (max-width: 640px) {
+  .results { grid-template-columns: 1fr; }
+}
+
+.result-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 24px;
+  position: relative;
+  overflow: hidden;
+}
+
+.result-card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 4px;
+}
+
+.result-card.plain::before { background: #999; }
+.result-card.pfrc::before { background: var(--accent); }
+
+.result-card h3 {
+  font-family: 'Source Serif 4', serif;
+  font-size: 16px;
+  font-weight: 600;
+  margin-bottom: 16px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--border);
+}
+
+.result-card.plain h3 { color: #555; }
+.result-card.pfrc h3 { color: var(--accent); }
+
+.material-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 7px 0;
+  border-bottom: 1px dotted #E8E6E2;
+}
+
+.material-row:last-child { border-bottom: none; }
+
+.material-row .name {
+  font-size: 13px;
+  color: var(--text);
+}
+
+.material-row .name small {
+  color: var(--text-dim);
+  font-size: 11px;
+}
+
+.material-row .value {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text);
+  text-align: right;
+  white-space: nowrap;
+}
+
+.fiber-row .name { color: var(--fiber-band); font-weight: 600; }
+.fiber-row .value { color: var(--fiber-band); }
+.fiber-spiral .name { color: var(--fiber-spiral); font-weight: 600; }
+.fiber-spiral .value { color: var(--fiber-spiral); }
+
+.total-row {
+  margin-top: 8px;
+  padding-top: 10px;
+  border-top: 2px solid var(--border);
+  font-weight: 700;
+}
+
+.total-row .value {
+  font-size: 16px;
+  font-weight: 700;
+}
+
+/* Procedure */
+.procedure {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 24px;
+  margin-bottom: 28px;
+}
+
+.procedure h2 {
+  font-family: 'Source Serif 4', serif;
+  font-size: 18px;
+  font-weight: 600;
+  margin-bottom: 16px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--border);
+}
+
+.step {
+  display: flex;
+  gap: 14px;
+  padding: 12px 0;
+  border-bottom: 1px solid #F0EEE9;
+}
+
+.step:last-child { border-bottom: none; }
+
+.step-num {
+  width: 32px;
+  height: 32px;
+  min-width: 32px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 13px;
+  font-weight: 700;
+  color: white;
+}
+
+.step-num.dry { background: var(--orange); }
+.step-num.wet { background: var(--blue); }
+.step-num.fiber { background: var(--accent); }
+
+.step-text {
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.step-text strong { color: var(--text); }
+.step-text .qty {
+  font-family: 'JetBrains Mono', monospace;
+  font-weight: 500;
+  background: #F5F3EF;
+  padding: 1px 6px;
+  border-radius: 4px;
+  font-size: 13px;
+}
+
+.note-box {
+  margin-top: 20px;
+  padding: 14px 18px;
+  border-radius: 8px;
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+.note-box.warning {
+  background: var(--orange-light);
+  border-left: 4px solid var(--orange);
+  color: #5A3E1A;
+}
+
+.note-box.info {
+  background: var(--blue-light);
+  border-left: 4px solid var(--blue);
+  color: #1A3A52;
+}
+
+.note-box.danger {
+  background: var(--red-light);
+  border-left: 4px solid var(--red);
+  color: #5A1A1A;
+}
+
+footer {
+  text-align: center;
+  padding-top: 20px;
+  border-top: 1px solid var(--border);
+  font-size: 12px;
+  color: var(--text-dim);
+  font-family: 'JetBrains Mono', monospace;
+}
+
+footer a { color: var(--accent); text-decoration: none; }
+footer a:hover { text-decoration: underline; }
+</style>
+</head>
+<body>
+
+<div class="container">
+  <header>
+    <h1>Calculator Reteta Beton PFRC</h1>
+    <p>PIARMAP — Grant ARUST-UTCB-29/2025 — NE 012/1-2022</p>
+  </header>
+
+  <div class="input-section">
+    <h2>Parametri de intrare</h2>
+    <div class="input-grid">
+      <div class="input-group">
+        <label>Masa de beton dorita</label>
+        <input type="number" id="masa" value="10" min="1" max="100000" step="0.1">
+        <span class="unit">kg (ex: 10 kg = 1 epruveta, 3840 kg = 1,6 m3 placa 2x4m)</span>
+      </div>
+      <div class="input-group">
+        <label>Clasa de beton</label>
+        <select id="clasa">
+          <option value="C25/30" selected>C25/30 (pardoseli industriale)</option>
+          <option value="C30/37">C30/37</option>
+          <option value="C35/45">C35/45</option>
+        </select>
+      </div>
+      <div class="input-group">
+        <label>Consistenta (tasare)</label>
+        <select id="consistenta">
+          <option value="S3" selected>S3 (100-150 mm, pompabil)</option>
+          <option value="S2">S2 (50-90 mm, plastic)</option>
+          <option value="S4">S4 (160-210 mm, fluid)</option>
+        </select>
+      </div>
+      <div class="input-group">
+        <label>Dimensiune maxima agregat</label>
+        <select id="dmax">
+          <option value="16" selected>16 mm</option>
+          <option value="8">8 mm</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="fiber-toggle" onclick="document.getElementById('fiberCheck').click()">
+      <input type="checkbox" id="fiberCheck" checked>
+      <span>Adauga fibre PIARMAP (armare dispersa)</span>
+    </div>
+
+    <div class="fiber-options" id="fiberOptions">
+      <h3>Configuratie fibre</h3>
+      <div class="input-grid">
+        <div class="input-group">
+          <label>Tip fibra</label>
+          <select id="tipFibra">
+            <option value="mix">Mix 50/50 (banda + spiralata) — recomandat</option>
+            <option value="banda">Banda rugoasa MSLA (0,5x2x20 mm)</option>
+            <option value="spirala">Spiralata 3D MSLA (d=0,5 mm)</option>
+          </select>
+        </div>
+        <div class="input-group">
+          <label>Dozaj fibre</label>
+          <select id="dozajFibra">
+            <option value="3.75">3,75 kg/m3 (0,34% vol.) — minim FRC spirala</option>
+            <option value="5.00" selected>5,00 kg/m3 (0,45% vol.) — recomandat mix</option>
+            <option value="6.25">6,25 kg/m3 (0,57% vol.) — FRC structural</option>
+            <option value="2.00">2,00 kg/m3 (0,18% vol.) — minim</option>
+          </select>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="results" id="results"></div>
+
+  <div class="procedure" id="procedure"></div>
+
+  <div class="note-box danger">
+    <strong>Adaugarea apei in betonul livrat pe santier ("in cifa") a fost, este si ramane interzisa in Romania</strong> (Manual Heidelberg Materials, NE 012/1-2022). Nu se adauga niciodata apa suplimentara pentru a mari lucrabilitatea — se foloseste exclusiv aditiv superplastifiant.
+  </div>
+
+  <footer>
+    PIARMAP — Pardoseli industriale armate cu mase plastice reciclate<br>
+    Conf. dr. ing. Boti Ioan | Ing. Guran Stefan Alexandru<br>
+    <a href="https://geotechnicsinfo.github.io/piarmap/">geotechnicsinfo.github.io/piarmap</a>
+  </footer>
+</div>
+
+<script>
+const RETETE = {
+  'C25/30': {
+    ciment: 320, apa: 165, aditiv_pct: 1.0, densitate_ciment: 3.0,
+    densitate_agregate: 2.65, aer: 20, raport_ac: 0.50,
+    sorturi: [0.40, 0.20, 0.40],
+    label: 'C25/30', fcm: '~40 N/mm2'
+  },
+  'C30/37': {
+    ciment: 360, apa: 164, aditiv_pct: 1.0, densitate_ciment: 3.0,
+    densitate_agregate: 2.65, aer: 20, raport_ac: 0.43,
+    sorturi: [0.40, 0.20, 0.40],
+    label: 'C30/37', fcm: '~46 N/mm2'
+  },
+  'C35/45': {
+    ciment: 400, apa: 174, aditiv_pct: 1.0, densitate_ciment: 3.0,
+    densitate_agregate: 2.65, aer: 20, raport_ac: 0.41,
+    sorturi: [0.40, 0.20, 0.40],
+    label: 'C35/45', fcm: '~53 N/mm2'
+  }
+};
+
+const FIBRE = {
+  banda: { name: 'Banda rugoasa MSLA', dim: '0,5x2x20 mm', V: 20.0, m: 0.022, rho: 1.1 },
+  spirala: { name: 'Spiralata 3D MSLA', dim: 'd=0,5 L=20 Ds=3 p=4 mm', V: 10.05, m: 0.0111, rho: 1.1 }
+};
+
+function fmt(val, dec=1) {
+  if (val < 0.01) return '< 0,01';
+  return val.toFixed(dec).replace('.', ',');
+}
+
+function fmtInt(val) {
+  return Math.round(val).toLocaleString('ro-RO');
+}
+
+function calculate() {
+  const masa = parseFloat(document.getElementById('masa').value) || 10;
+  const clasa = document.getElementById('clasa').value;
+  const withFibers = document.getElementById('fiberCheck').checked;
+  const tipFibra = document.getElementById('tipFibra').value;
+  const dozajFibra = parseFloat(document.getElementById('dozajFibra').value);
+
+  const r = RETETE[clasa];
+
+  // Compute aggregates per m3 using formula from RTC guide
+  // Ag = rho_ag * (1000 - D/rho_c - At - P)
+  const aditiv_l = r.ciment * r.aditiv_pct / 100 / 1.05; // l/m3
+  const At = r.apa + (aditiv_l > 3 ? aditiv_l : 0);
+  const agregate_m3 = r.densitate_agregate * (1000 - r.ciment / r.densitate_ciment - At - r.aer);
+
+  const sort04 = agregate_m3 * r.sorturi[0];
+  const sort48 = agregate_m3 * r.sorturi[1];
+  const sort816 = agregate_m3 * r.sorturi[2];
+
+  // Density of fresh concrete
+  const densitate = r.ciment + agregate_m3 + At;
+
+  // Volume for desired mass
+  const volum_m3 = masa / densitate;
+
+  // Scale to desired mass
+  const s = volum_m3; // multiplier (m3)
+
+  const c_ciment = r.ciment * s;
+  const c_apa = r.apa * s;
+  const c_aditiv = aditiv_l * s;
+  const c_sort04 = sort04 * s;
+  const c_sort48 = sort48 * s;
+  const c_sort816 = sort816 * s;
+  const c_total_agregate = agregate_m3 * s;
+
+  // Fiber calculations
+  let c_fibre_banda = 0, c_fibre_spirala = 0;
+  let n_banda = 0, n_spirala = 0;
+
+  if (withFibers) {
+    const fibreMasa = dozajFibra * volum_m3; // kg total
+    if (tipFibra === 'banda') {
+      c_fibre_banda = fibreMasa;
+      n_banda = (fibreMasa * 1000) / (FIBRE.banda.m * 1000); // grams
+    } else if (tipFibra === 'spirala') {
+      c_fibre_spirala = fibreMasa;
+      n_spirala = (fibreMasa * 1000) / (FIBRE.spirala.m * 1000);
+    } else { // mix 50/50
+      c_fibre_banda = fibreMasa * 0.5;
+      c_fibre_spirala = fibreMasa * 0.5;
+      n_banda = (c_fibre_banda * 1000) / (FIBRE.banda.m * 1000);
+      n_spirala = (c_fibre_spirala * 1000) / (FIBRE.spirala.m * 1000);
+    }
+  }
+
+  // Build results HTML
+  let html = '';
+
+  // Plain concrete card
+  html += `
+  <div class="result-card plain">
+    <h3>Beton simplu ${r.label} (fara fibre)</h3>
+    <div class="material-row"><span class="name">Ciment CEM II 42,5R <small>(${r.ciment} kg/m3)</small></span><span class="value">${fmt(c_ciment, 2)} kg</span></div>
+    <div class="material-row"><span class="name">Apa de preparare A' <small>(${r.apa} l/m3)</small></span><span class="value">${fmt(c_apa, 2)} l</span></div>
+    <div class="material-row"><span class="name">Aditiv superplastifiant <small>(${r.aditiv_pct}%)</small></span><span class="value">${fmt(c_aditiv * 1000, 0)} ml</span></div>
+    <div class="material-row"><span class="name">Sort 0-4 mm <small>(40%)</small></span><span class="value">${fmt(c_sort04, 2)} kg</span></div>
+    <div class="material-row"><span class="name">Sort 4-8 mm <small>(20%)</small></span><span class="value">${fmt(c_sort48, 2)} kg</span></div>
+    <div class="material-row"><span class="name">Sort 8-16 mm <small>(40%)</small></span><span class="value">${fmt(c_sort816, 2)} kg</span></div>
+    <div class="material-row total-row"><span class="name">Total beton simplu</span><span class="value">${fmt(masa, 1)} kg</span></div>
+    <div class="material-row"><span class="name"><small>Volum</small></span><span class="value"><small>${fmt(volum_m3 * 1000, 1)} litri (${fmt(volum_m3, 4)} m3)</small></span></div>
+    <div class="material-row"><span class="name"><small>Densitate proaspat</small></span><span class="value"><small>~${fmtInt(densitate)} kg/m3</small></span></div>
+    <div class="material-row"><span class="name"><small>Raport A<sub>ef</sub>/C</small></span><span class="value"><small>${fmt(r.raport_ac, 2)}</small></span></div>
+  </div>`;
+
+  // PFRC card
+  if (withFibers) {
+    const totalFibre = c_fibre_banda + c_fibre_spirala;
+    const totalFibreG = totalFibre * 1000;
+
+    html += `
+    <div class="result-card pfrc">
+      <h3>Beton PFRC ${r.label} + fibre PIARMAP</h3>
+      <div class="material-row"><span class="name">Ciment CEM II 42,5R</span><span class="value">${fmt(c_ciment, 2)} kg</span></div>
+      <div class="material-row"><span class="name">Apa de preparare A'</span><span class="value">${fmt(c_apa, 2)} l</span></div>
+      <div class="material-row"><span class="name">Aditiv superplastifiant</span><span class="value">${fmt(c_aditiv * 1000, 0)} ml</span></div>
+      <div class="material-row"><span class="name">Sort 0-4 mm</span><span class="value">${fmt(c_sort04, 2)} kg</span></div>
+      <div class="material-row"><span class="name">Sort 4-8 mm</span><span class="value">${fmt(c_sort48, 2)} kg</span></div>
+      <div class="material-row"><span class="name">Sort 8-16 mm</span><span class="value">${fmt(c_sort816, 2)} kg</span></div>`;
+
+    if (c_fibre_banda > 0) {
+      html += `<div class="material-row fiber-row"><span class="name">Fibre banda rugoasa MSLA <small>(0,5x2x20 mm)</small></span><span class="value">${totalFibreG >= 1 ? fmt(c_fibre_banda * 1000, 1) + ' g' : fmt(c_fibre_banda * 1000000, 0) + ' mg'}</span></div>
+      <div class="material-row fiber-row"><span class="name"><small>numar fibre banda</small></span><span class="value"><small>~${fmtInt(n_banda)} buc</small></span></div>`;
+    }
+    if (c_fibre_spirala > 0) {
+      html += `<div class="material-row fiber-spiral"><span class="name">Fibre spiralate 3D MSLA <small>(d=0,5 mm)</small></span><span class="value">${totalFibreG >= 1 ? fmt(c_fibre_spirala * 1000, 1) + ' g' : fmt(c_fibre_spirala * 1000000, 0) + ' mg'}</span></div>
+      <div class="material-row fiber-spiral"><span class="name"><small>numar fibre spiralate</small></span><span class="value"><small>~${fmtInt(n_spirala)} buc</small></span></div>`;
+    }
+
+    html += `
+      <div class="material-row total-row"><span class="name">Total PFRC</span><span class="value">${fmt(masa + totalFibre, 1)} kg</span></div>
+      <div class="material-row"><span class="name"><small>Dozaj fibre total</small></span><span class="value"><small>${fmt(dozajFibra, 2)} kg/m3 = ${fmt(totalFibreG, 1)} g</small></span></div>
+      <div class="material-row"><span class="name"><small>Fractiune volumica V<sub>f</sub></small></span><span class="value"><small>${fmt(dozajFibra / (FIBRE.banda.rho * 1000) * 100, 2)}%</small></span></div>
+    </div>`;
+  } else {
+    html += `
+    <div class="result-card pfrc" style="display:flex; align-items:center; justify-content:center; opacity:0.4;">
+      <p style="text-align:center; color: var(--text-dim);">Activeaza optiunea<br>"Adauga fibre PIARMAP"<br>pentru a vedea reteta PFRC</p>
+    </div>`;
+  }
+
+  document.getElementById('results').innerHTML = html;
+
+  // Build procedure
+  let proc = `<h2>Procedura de preparare (ordinea de introducere)</h2>`;
+
+  proc += `
+  <div class="step">
+    <div class="step-num dry">1</div>
+    <div class="step-text"><strong>Agregate uscate</strong> — se introduc toate sorturile (<span class="qty">${fmt(c_sort04, 1)} kg</span> sort 0-4 + <span class="qty">${fmt(c_sort48, 1)} kg</span> sort 4-8 + <span class="qty">${fmt(c_sort816, 1)} kg</span> sort 8-16) si se malaxeaza pentru omogenizare.</div>
+  </div>
+  <div class="step">
+    <div class="step-num dry">2</div>
+    <div class="step-text"><strong>Ciment</strong> — se introduce treptat <span class="qty">${fmt(c_ciment, 1)} kg</span> ciment, evitand formarea de cocoloase. Se malaxeaza minim 1 minut.</div>
+  </div>
+  <div class="step">
+    <div class="step-num wet">3</div>
+    <div class="step-text"><strong>Prima jumatate de apa</strong> — se adauga <span class="qty">${fmt(c_apa / 2, 1)} l</span> apa (fara aditiv). Se malaxeaza minim 1 minut urmarind umezirea uniforma.</div>
+  </div>
+  <div class="step">
+    <div class="step-num wet">4</div>
+    <div class="step-text"><strong>Restul apei + aditiv</strong> — se adauga <span class="qty">${fmt(c_apa / 2, 1)} l</span> apa in care s-a dispersat <span class="qty">${fmt(c_aditiv * 1000, 0)} ml</span> aditiv superplastifiant. Se malaxeaza minim 1 minut.</div>
+  </div>`;
+
+  if (withFibers) {
+    const totalFibreG = (c_fibre_banda + c_fibre_spirala) * 1000;
+    proc += `
+    <div class="step">
+      <div class="step-num fiber">5</div>
+      <div class="step-text"><strong>Fibre PIARMAP</strong> — se presara treptat (in 30-60 sec) <span class="qty">${fmt(totalFibreG, 1)} g</span> fibre in betonul umed aflat in rotatie. <strong>Se malaxeaza inca 3 minute.</strong> Se verifica vizual absenta ghemurilor.</div>
+    </div>
+    <div class="step">
+      <div class="step-num fiber">6</div>
+      <div class="step-text"><strong>Turnare si vibrare</strong> — se toarna in matrita/cofraj. Vibrarea se limiteaza la <strong>30-45 secunde</strong> (nu 60-90 s ca la beton simplu) pentru a evita migrarea fibrelor spre suprafata.</div>
+    </div>`;
+  } else {
+    proc += `
+    <div class="step">
+      <div class="step-num wet">5</div>
+      <div class="step-text"><strong>Turnare si vibrare</strong> — se toarna in matrita/cofraj si se vibreaza 60-90 secunde.</div>
+    </div>`;
+  }
+
+  proc += `
+  <div class="note-box warning">
+    <strong>Conform Manual Heidelberg Materials:</strong> Se vor respecta intotdeauna proportiile intre componente, timpul minim de malaxare, ordinea de introducere a acestora, procedura de preparare precum si reteta afisata vizibil la locul de preparare.
+  </div>`;
+
+  if (withFibers) {
+    proc += `
+    <div class="note-box info">
+      <strong>De ce fibrele se adauga ultimele?</strong> In compozitia uscata, fibrele se aglomereaza (fiber balling) si nu se mai disperseaza. In betonul umed, pasta de ciment actioneaza ca vehicul de dispersie, invelind fiecare fibra si facilitand distributia uniforma.
+    </div>`;
+  }
+
+  document.getElementById('procedure').innerHTML = proc;
+}
+
+// Event listeners
+document.querySelectorAll('input, select').forEach(el => {
+  el.addEventListener('input', calculate);
+  el.addEventListener('change', calculate);
+});
+
+document.getElementById('fiberCheck').addEventListener('change', function() {
+  document.getElementById('fiberOptions').classList.toggle('visible', this.checked);
+  calculate();
+});
+
+// Initial
+document.getElementById('fiberOptions').classList.add('visible');
+calculate();
+</script>
+
+</body>
+</html>
